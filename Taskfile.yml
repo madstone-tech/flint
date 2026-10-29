@@ -1,0 +1,123 @@
+# https://taskfile.dev
+version: "3"
+
+vars:
+  BINARY_NAME: flint
+  MAIN: ./cmd/flint
+  PKG_VERSION: github.com/madstone-tech/flint/internal/version
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
+  COMMIT:
+    sh: git rev-parse --short HEAD 2>/dev/null || echo "none"
+  BUILD_DATE:
+    sh: date -u '+%Y-%m-%dT%H:%M:%SZ'
+  LDFLAGS: >-
+    -s -w
+    -X {{.PKG_VERSION}}.Version={{.VERSION}}
+    -X {{.PKG_VERSION}}.Commit={{.COMMIT}}
+    -X {{.PKG_VERSION}}.Date={{.BUILD_DATE}}
+    -X {{.PKG_VERSION}}.BuiltBy=task
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  build:
+    desc: Build the binary with version metadata
+    cmds:
+      - go build -trimpath -ldflags "{{.LDFLAGS}}" -o {{.BINARY_NAME}} {{.MAIN}}
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...
+
+  test-verbose:
+    desc: Run tests with verbose output
+    cmds:
+      - go test -v ./...
+
+  coverage:
+    desc: Run tests with an HTML coverage report
+    cmds:
+      - go test -cover -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - golangci-lint run
+
+  fmt:
+    desc: Format code
+    cmds:
+      - go fmt ./...
+      - goimports -w .
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - rm -f {{.BINARY_NAME}} coverage.out coverage.html
+      - rm -rf dist/ completions/
+
+  completions:
+    desc: Generate shell completion scripts into ./completions
+    cmds:
+      - bash scripts/completions.sh
+
+  vulncheck:
+    desc: Scan dependencies for known vulnerabilities
+    cmds:
+      - go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  run:
+    desc: Run the application (use -- to pass args, e.g. task run -- --raw my-profile)
+    cmds:
+      - go run {{.MAIN}} {{.CLI_ARGS}}
+
+  deps:
+    desc: Download and tidy dependencies
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  tools:
+    desc: Install development tools
+    cmds:
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - go install golang.org/x/tools/cmd/goimports@latest
+      - go install golang.org/x/vuln/cmd/govulncheck@latest
+      - go install github.com/goreleaser/goreleaser/v2@latest
+
+  release-snapshot:
+    desc: Build a local snapshot release (nothing is published)
+    cmds:
+      - goreleaser release --snapshot --clean
+
+  release-check:
+    desc: Validate the GoReleaser config
+    cmds:
+      - goreleaser check
+
+  ci:
+    desc: Run all CI checks
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: lint
+      - task: test
+      - task: build
+
+  setup:
+    desc: Set up the development environment
+    cmds:
+      - task: deps
+      - task: tools

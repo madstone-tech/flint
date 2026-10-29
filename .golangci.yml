@@ -1,0 +1,37 @@
+# golangci-lint configuration for flint
+# https://golangci-lint.run/usage/configuration/
+version: "2"
+
+run:
+  timeout: 3m
+
+linters:
+  default: standard
+  enable:
+    - gosec         # security checks — important: flint handles credentials
+    - revive        # style/lint rules
+    - misspell      # catch typos in comments/strings
+    - unconvert     # redundant type conversions
+    - unparam       # unused function parameters
+    - bodyclose     # ensure HTTP response bodies are closed
+    - errorlint     # correct error wrapping/comparison
+    - gocritic      # opinionated diagnostics
+  settings:
+    gosec:
+      excludes:
+        # G204: exec with user-chosen command is the whole point of --exec;
+        # it is annotated with #nosec at the call site.
+        - G204
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/madstone-tech/flint
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

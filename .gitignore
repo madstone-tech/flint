@@ -1,0 +1,21 @@
+# Binaries
+/flint
+/dist/
+/completions/
+
+# Test / coverage artifacts
+coverage.out
+coverage.html
+*.test
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+.kiro/
+
+# Local agent / chat exports (never publish)
+flient-chat
+*-chat
+*.chat.json

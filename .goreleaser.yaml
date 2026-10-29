@@ -1,0 +1,143 @@
+# GoReleaser configuration for flint
+# https://goreleaser.com/customization/
+#
+# Validate:       goreleaser check
+# Local snapshot: goreleaser release --snapshot --clean   (nothing is published)
+version: 2
+
+project_name: flint
+
+before:
+  hooks:
+    - go mod tidy
+    # Generate shell completions bundled into the release archives.
+    - bash scripts/completions.sh
+
+builds:
+  - id: flint
+    binary: flint
+    main: ./cmd/flint
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/madstone-tech/flint/internal/version.Version={{ .Version }}
+      - -X github.com/madstone-tech/flint/internal/version.Commit={{ .Commit }}
+      - -X github.com/madstone-tech/flint/internal/version.Date={{ .CommitDate }}
+      - -X github.com/madstone-tech/flint/internal/version.BuiltBy=goreleaser
+    # Reproducible builds: embedded date and file times come from the commit,
+    # not the machine that ran the release.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+# One macOS binary for Intel and Apple silicon.
+universal_binaries:
+  - id: flint_universal
+    ids: [flint]
+    replace: true
+    name_template: flint
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "all" }}universal
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE*
+      - CHANGELOG.md
+      - src: completions/*
+        dst: completions
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs"
+      - "^test"
+      - "^ci"
+      - "^chore"
+      - "^style"
+      - "^Merge"
+  groups:
+    - title: New Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: Performance
+      regexp: '^.*?perf(\(.+\))??!?:.+$'
+      order: 2
+    - title: Refactoring
+      regexp: '^.*?refactor(\(.+\))??!?:.+$'
+      order: 3
+    - title: Other
+      order: 999
+
+release:
+  github:
+    owner: madstone-tech
+    name: flint
+  prerelease: auto
+  mode: replace
+  header: |
+    ## flint {{ .Tag }}
+
+    A small CLI that issues temporary Amazon Bedrock bearer tokens from an AWS
+    profile — like granted.dev's `assume`, but for Bedrock's API-key auth.
+
+    ### Install
+
+    ```bash
+    # Homebrew (macOS and Linux)
+    brew install --cask madstone-tech/tap/flint
+
+    # Go
+    go install github.com/madstone-tech/flint/cmd/flint@{{ .Tag }}
+    ```
+
+    Or download an archive below and put `flint` on your `PATH`.
+    Verify with `flint --version`.
+  footer: |
+    **Full Changelog**: https://github.com/madstone-tech/flint/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+# Homebrew cask in madstone-tech/homebrew-tap.
+homebrew_casks:
+  - name: flint
+    repository:
+      owner: madstone-tech
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: https://github.com/madstone-tech/flint
+    description: Issue temporary Amazon Bedrock bearer tokens from an AWS profile
+    license: MIT
+    binaries: [flint]
+    # Generated from the binary itself, so completions always match the release.
+    hooks:
+      post:
+        install_steps: |
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/flint"]
+
+announce:
+  skip: true
