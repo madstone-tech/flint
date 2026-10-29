@@ -1,6 +1,6 @@
 module github.com/madstone-tech/flint
 
-go 1.27
+go 1.24.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.32.6

@@ -27,7 +27,10 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          # Pin to a v2 release built with a recent Go. The default "latest"
+          # resolves to the v1 line, which is built with an older Go and cannot
+          # read the v2 .golangci.yml config.
+          version: v2.15.0
 
   test:
     name: Test & build (${{ matrix.os }})
