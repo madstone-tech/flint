@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-29
+
 ### Added
 - Initial release of `flint`.
 - Derive temporary Amazon Bedrock bearer tokens from any AWS profile (static
@@ -44,3 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the child process.
 - Shell completions (bash, zsh, fish) ship in the release archives. CI runs a
   linux, macOS, and windows test matrix and `govulncheck`.
+
+[Unreleased]: https://github.com/madstone-tech/flint/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/madstone-tech/flint/releases/tag/v0.1.0
