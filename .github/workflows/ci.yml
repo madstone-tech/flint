@@ -25,11 +25,9 @@ jobs:
       - name: Vet
         run: go vet ./...
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          # Pin to a v2 release built with a recent Go. The default "latest"
-          # resolves to the v1 line, which is built with an older Go and cannot
-          # read the v2 .golangci.yml config.
+          # v2 of golangci-lint requires the v2 config and action v7+.
           version: v2.15.0
 
   test:
